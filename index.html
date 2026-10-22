@@ -401,6 +401,7 @@
       const cropBox = document.getElementById('cropBox');
 
       const MAX_SIDE = 2200;
+      const CROP_RATIO = 4 / 5;
 
       let imageLoaded = false;
       let currentImage = null;
@@ -454,15 +455,21 @@
           return;
         }
 
+        let w = canvas.width * 0.68;
+        let h = w / CROP_RATIO;
+
+        if (h > canvas.height * 0.72) {
+          h = canvas.height * 0.72;
+          w = h * CROP_RATIO;
+        }
+
         cropRect = {
-          x: canvas.width * 0.15,
-          y: canvas.height * 0.18,
-          w: canvas.width * 0.7,
-          h: canvas.height * 0.64,
+          x: (canvas.width - w) / 2,
+          y: (canvas.height - h) / 2,
+          w,
+          h
         };
 
-        if (cropRect.x + cropRect.w > canvas.width) cropRect.x = canvas.width - cropRect.w;
-        if (cropRect.y + cropRect.h > canvas.height) cropRect.y = canvas.height - cropRect.h;
         updateCropBox();
       }
 
@@ -539,39 +546,79 @@
         };
       }
 
+      function isNearResizeHandle(point) {
+        if (!cropRect) return false;
+        const handle = 28;
+        const right = cropRect.x + cropRect.w;
+        const bottom = cropRect.y + cropRect.h;
+        return point.x >= right - handle && point.x <= right + handle && point.y >= bottom - handle && point.y <= bottom + handle;
+      }
+
       function startDrag(event) {
         if (!cropMode || !cropRect) return;
         const point = getPointerPosition(event);
-        const inside = point.x >= cropRect.x && point.x <= cropRect.x + cropRect.w && point.y >= cropRect.y && point.y <= cropRect.y + cropRect.h;
-
-        dragState = inside ? { mode: 'move', offsetX: point.x - cropRect.x, offsetY: point.y - cropRect.y } : { mode: 'draw', startX: point.x, startY: point.y };
+        const mode = isNearResizeHandle(point) ? 'resize' : 'move';
+        if (mode === 'move') {
+          dragState = {
+            mode: 'move',
+            offsetX: point.x - cropRect.x,
+            offsetY: point.y - cropRect.y
+          };
+        } else {
+          dragState = {
+            mode: 'resize',
+            startX: point.x,
+            startY: point.y,
+            startW: cropRect.w,
+            startH: cropRect.h
+          };
+        }
       }
 
       function moveDrag(event) {
         if (!dragState || !cropRect) return;
         const point = getPointerPosition(event);
 
-        if (dragState.mode === 'draw') {
-          const x = Math.min(dragState.startX, point.x);
-          const y = Math.min(dragState.startY, point.y);
-          const w = Math.abs(point.x - dragState.startX);
-          const h = Math.abs(point.y - dragState.startY);
-
-          cropRect = {
-            x: clamp(x, 0, canvas.width),
-            y: clamp(y, 0, canvas.height),
-            w: clamp(w, 20, canvas.width),
-            h: clamp(h, 20, canvas.height),
-          };
-
-          if (cropRect.x + cropRect.w > canvas.width) cropRect.w = canvas.width - cropRect.x;
-          if (cropRect.y + cropRect.h > canvas.height) cropRect.h = canvas.height - cropRect.y;
+        if (dragState.mode === 'move') {
+          const nextX = clamp(point.x - dragState.offsetX, 0, canvas.width - cropRect.w);
+          const nextY = clamp(point.y - dragState.offsetY, 0, canvas.height - cropRect.h);
+          cropRect.x = nextX;
+          cropRect.y = nextY;
           updateCropBox();
           return;
         }
 
-        cropRect.x = clamp(point.x - dragState.offsetX, 0, canvas.width - cropRect.w);
-        cropRect.y = clamp(point.y - dragState.offsetY, 0, canvas.height - cropRect.h);
+        const dx = point.x - dragState.startX;
+        const dy = point.y - dragState.startY;
+        let newW = dragState.startW + dx;
+        let newH = newW / CROP_RATIO;
+
+        if (Math.abs(dy) > Math.abs(dx)) {
+          newH = dragState.startH + dy;
+          newW = newH * CROP_RATIO;
+        }
+
+        const minW = 80;
+        const minH = 80;
+        const maxW = Math.min(canvas.width - cropRect.x, canvas.width);
+        const maxH = Math.min(canvas.height - cropRect.y, canvas.height);
+
+        newW = clamp(newW, minW, maxW);
+        newH = clamp(newW / CROP_RATIO, minH, maxH);
+        newW = newH * CROP_RATIO;
+
+        if (cropRect.x + newW > canvas.width) {
+          newW = canvas.width - cropRect.x;
+          newH = newW / CROP_RATIO;
+        }
+
+        if (cropRect.y + newH > canvas.height) {
+          newH = canvas.height - cropRect.y;
+          newW = newH * CROP_RATIO;
+        }
+
+        cropRect.w = newW;
+        cropRect.h = newH;
         updateCropBox();
       }
 
@@ -603,16 +650,6 @@
         ensureCropRect();
       }
 
-      function resetEditor() {
-        if (!currentImage) return;
-        contrast.value = 120;
-        brightness.value = 100;
-        imageTransform = { flipX: false, flipY: false };
-        updateSliderLabels();
-        toImageData();
-        setCropMode(false);
-      }
-
       function setCropMode(active) {
         cropMode = active;
         cropOverlay.classList.toggle('active', active);
@@ -627,6 +664,16 @@
         if (direction === 'vertical') imageTransform.flipY = !imageTransform.flipY;
 
         toImageData();
+      }
+
+      function resetEditor() {
+        if (!currentImage) return;
+        contrast.value = 120;
+        brightness.value = 100;
+        imageTransform = { flipX: false, flipY: false };
+        updateSliderLabels();
+        toImageData();
+        setCropMode(false);
       }
 
       function saveImage() {
@@ -694,8 +741,18 @@
       cropBox.addEventListener('pointerdown', startDrag);
       cropOverlay.addEventListener('pointerdown', function (event) {
         if (!cropMode) return;
-        startDrag(event);
+        if (event.target === cropOverlay) {
+          const point = getPointerPosition(event);
+          cropRect = {
+            x: clamp(point.x - 80, 0, canvas.width - 80),
+            y: clamp(point.y - 100, 0, canvas.height - 100),
+            w: Math.min(220, canvas.width * 0.7),
+            h: Math.min(220, canvas.width * 0.7) / CROP_RATIO
+          };
+          updateCropBox();
+        }
       });
+
       window.addEventListener('pointermove', moveDrag);
       window.addEventListener('pointerup', endDrag);
       window.addEventListener('pointercancel', endDrag);
