@@ -385,23 +385,18 @@
     <div class="card">
       <div class="picker-row">
         <label class="btn btn-primary">
-          Cámara
-          <input id="fileCamera" type="file" accept="image/*" capture="environment" />
-        </label>
-        <label class="btn btn-secondary">
-          Galería
-          <input id="fileGallery" type="file" accept="image/*" />
+          📷 Foto
+          <input id="fileInput" type="file" accept="image/*" />
         </label>
 
-        <button type="button" class="btn btn-primary" id="btnSave" disabled>Guardar</button>
+        <button type="button" class="btn btn-primary" id="btnSave" disabled>💾 Guardar</button>
       </div>
     </div>
   </div>
 
   <script>
     (function () {
-      const fileCamera = document.getElementById('fileCamera');
-      const fileGallery = document.getElementById('fileGallery');
+      const fileInput = document.getElementById('fileInput');
       const previewWrap = document.getElementById('previewWrap');
       const canvas = document.getElementById('previewCanvas');
       const ctx = canvas.getContext('2d');
@@ -856,13 +851,7 @@
         }, 'image/jpeg', 0.92);
       }
 
-      fileCamera.addEventListener('change', function (event) {
-        const file = event.target.files[0];
-        loadImageFromFile(file);
-        event.target.value = '';
-      });
-
-      fileGallery.addEventListener('change', function (event) {
+      fileInput.addEventListener('change', function (event) {
         const file = event.target.files[0];
         loadImageFromFile(file);
         event.target.value = '';
