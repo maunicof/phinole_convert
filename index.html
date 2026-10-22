@@ -304,8 +304,8 @@
 
     .crop-box .handle {
       position: absolute;
-      width: 12px;
-      height: 12px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: rgba(245,189,89,0.95);
       border: 2px solid rgba(255,255,255,1);
@@ -314,14 +314,14 @@
       z-index: 2;
     }
 
-    .crop-box .handle.nw { left: -7px; top: -7px; cursor: nw-resize; }
-    .crop-box .handle.n { left: 50%; top: -7px; transform: translateX(-50%); cursor: n-resize; }
-    .crop-box .handle.ne { right: -7px; top: -7px; cursor: ne-resize; }
-    .crop-box .handle.e { right: -7px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
-    .crop-box .handle.se { right: -7px; bottom: -7px; cursor: se-resize; }
-    .crop-box .handle.s { left: 50%; bottom: -7px; transform: translateX(-50%); cursor: s-resize; }
-    .crop-box .handle.sw { left: -7px; bottom: -7px; cursor: sw-resize; }
-    .crop-box .handle.w { left: -7px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+    .crop-box .handle.nw { left: -9px; top: -9px; cursor: nw-resize; }
+    .crop-box .handle.n { left: 50%; top: -9px; transform: translateX(-50%); cursor: n-resize; }
+    .crop-box .handle.ne { right: -9px; top: -9px; cursor: ne-resize; }
+    .crop-box .handle.e { right: -9px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+    .crop-box .handle.se { right: -9px; bottom: -9px; cursor: se-resize; }
+    .crop-box .handle.s { left: 50%; bottom: -9px; transform: translateX(-50%); cursor: s-resize; }
+    .crop-box .handle.sw { left: -9px; bottom: -9px; cursor: sw-resize; }
+    .crop-box .handle.w { left: -9px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
 
     .disabled,
     button:disabled,
@@ -402,6 +402,18 @@
         <output id="brightnessVal">100</output>
       </div>
 
+      <div class="slider-row">
+        <label for="blackPoint">Negros</label>
+        <input type="range" id="blackPoint" min="0" max="200" value="100" />
+        <output id="blackVal">100</output>
+      </div>
+
+      <div class="slider-row">
+        <label for="whitePoint">Blancos</label>
+        <input type="range" id="whitePoint" min="0" max="200" value="100" />
+        <output id="whiteVal">100</output>
+      </div>
+
       <div class="save-row">
         <button type="button" class="btn btn-ghost" id="applyCrop">Aplicar recorte</button>
         <button type="button" class="btn btn-primary" id="btnSave">Guardar</button>
@@ -423,8 +435,12 @@
       const controls = document.getElementById('controls');
       const contrast = document.getElementById('contrast');
       const brightness = document.getElementById('brightness');
+      const blackPoint = document.getElementById('blackPoint');
+      const whitePoint = document.getElementById('whitePoint');
       const contrastVal = document.getElementById('contrastVal');
       const brightnessVal = document.getElementById('brightnessVal');
+      const blackVal = document.getElementById('blackVal');
+      const whiteVal = document.getElementById('whiteVal');
       const flipHBtn = document.getElementById('flipH');
       const flipVBtn = document.getElementById('flipV');
       const toggleCropBtn = document.getElementById('toggleCrop');
@@ -449,7 +465,7 @@
       }
 
       function setEditingLocked(lock) {
-        const controlsToLock = [flipHBtn, flipVBtn, contrast, brightness, btnReset, btnSave];
+        const controlsToLock = [flipHBtn, flipVBtn, contrast, brightness, blackPoint, whitePoint, btnReset, btnSave];
         controlsToLock.forEach((el) => {
           if (!el) return;
           el.disabled = lock;
@@ -459,6 +475,8 @@
       function updateSliderLabels() {
         contrastVal.textContent = contrast.value;
         brightnessVal.textContent = brightness.value;
+        blackVal.textContent = blackPoint.value;
+        whiteVal.textContent = whitePoint.value;
       }
 
       function refreshBadge() {
@@ -549,10 +567,25 @@
         const pixels = imageData.data;
         const contrastFactor = Number(contrast.value) / 100;
         const brightnessOffset = (Number(brightness.value) - 100) * 1.28;
+        const blackShift = Number(blackPoint.value) - 100;
+        const whiteShift = Number(whitePoint.value) - 100;
 
         for (let i = 0; i < pixels.length; i += 4) {
           const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
           let value = (255 - gray - 128) * contrastFactor + 128 + brightnessOffset;
+
+          if (blackShift < 0) {
+            value = value * (1 + blackShift / 120);
+          } else if (blackShift > 0) {
+            value = value + (255 - value) * (blackShift / 220);
+          }
+
+          if (whiteShift < 0) {
+            value = value * (1 + whiteShift / 180);
+          } else if (whiteShift > 0) {
+            value = value + (255 - value) * (whiteShift / 220);
+          }
+
           value = clamp(value, 0, 255);
           pixels[i] = value;
           pixels[i + 1] = value;
@@ -597,7 +630,7 @@
 
       function getResizeHandle(point) {
         if (!cropRect) return null;
-        const threshold = 22;
+        const threshold = 28;
         const handles = {
           nw: { x: cropRect.x, y: cropRect.y },
           n: { x: cropRect.x + cropRect.w / 2, y: cropRect.y },
@@ -617,12 +650,17 @@
         return null;
       }
 
-      function startDrag(event) {
+      function startDrag(event, handleName = null) {
         if (!cropMode || !cropRect) return;
         event.preventDefault();
         const point = getPointerPosition(event);
-        const resizeHandle = getResizeHandle(point);
 
+        if (handleName) {
+          dragState = { mode: handleName, startX: point.x, startY: point.y, origin: { ...cropRect } };
+          return;
+        }
+
+        const resizeHandle = getResizeHandle(point);
         if (resizeHandle) {
           dragState = { mode: resizeHandle, startX: point.x, startY: point.y, origin: { ...cropRect } };
           return;
@@ -750,7 +788,6 @@
         if (active) {
           ensureCropRect();
           applyCropBtn.disabled = false;
-          toggleCropBtn.disabled = false;
           return;
         }
 
@@ -770,6 +807,8 @@
         if (!currentImage || cropMode) return;
         contrast.value = 120;
         brightness.value = 100;
+        blackPoint.value = 100;
+        whitePoint.value = 100;
         imageTransform = { flipX: false, flipY: false };
         updateSliderLabels();
         toImageData();
@@ -828,6 +867,18 @@
         if (currentImage) toImageData();
       });
 
+      blackPoint.addEventListener('input', function () {
+        if (cropMode) return;
+        updateSliderLabels();
+        if (currentImage) toImageData();
+      });
+
+      whitePoint.addEventListener('input', function () {
+        if (cropMode) return;
+        updateSliderLabels();
+        if (currentImage) toImageData();
+      });
+
       flipHBtn.addEventListener('click', function () {
         flipImage('horizontal');
       });
@@ -840,7 +891,18 @@
         setCropMode(!cropMode);
       });
 
-      cropBox.addEventListener('pointerdown', startDrag);
+      document.querySelectorAll('.handle').forEach((handle) => {
+        handle.addEventListener('pointerdown', (event) => {
+          const name = Array.from(handle.classList).find((cls) => cls !== 'handle');
+          startDrag(event, name);
+        });
+      });
+
+      cropBox.addEventListener('pointerdown', (event) => {
+        if (event.target.closest('.handle')) return;
+        startDrag(event);
+      });
+
       window.addEventListener('pointermove', moveDrag);
       window.addEventListener('pointerup', endDrag);
       window.addEventListener('pointercancel', endDrag);
