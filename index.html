@@ -134,7 +134,6 @@
       display: flex;
       gap: 10px;
       width: 100%;
-      margin-bottom: 10px;
     }
 
     .toolbar {
@@ -243,24 +242,6 @@
       min-height: 30px;
     }
 
-    .save-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .save-row .btn {
-      flex: 1;
-    }
-
-    .hint {
-      margin: 0;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.5;
-      font-size: 0.78rem;
-    }
-
     input[type="file"] {
       display: none;
     }
@@ -335,6 +316,7 @@
     @media (max-width: 430px) {
       .app { padding-left: 10px; padding-right: 10px; }
       .picker-row { gap: 8px; }
+      .picker-row .btn { padding: 0 8px; }
       .toolbar { gap: 7px; }
       .tool-btn { min-width: 72px; font-size: 0.9rem; }
       .btn { font-size: 0.9rem; }
@@ -370,18 +352,8 @@
     </div>
 
     <div class="card">
-      <div class="picker-row">
-        <label class="btn btn-primary">
-          Cámara
-          <input id="fileCamera" type="file" accept="image/*" capture="environment" />
-        </label>
-        <label class="btn btn-secondary">
-          Galería
-          <input id="fileGallery" type="file" accept="image/*" />
-        </label>
-      </div>
-
       <div class="toolbar">
+        <button type="button" class="tool-btn" id="btnAuto">✨ Auto</button>
         <button type="button" class="tool-btn" id="flipH">↔ Horizontal</button>
         <button type="button" class="tool-btn" id="flipV">↕ Vertical</button>
         <button type="button" class="tool-btn" id="toggleCrop">✂ Recortar</button>
@@ -402,11 +374,27 @@
         <output id="brightnessVal">100</output>
       </div>
 
-      <div class="save-row">
-        <button type="button" class="btn btn-primary" id="btnSave">Guardar</button>
+      <div class="slider-row">
+        <label for="shadows">Sombras</label>
+        <input type="range" id="shadows" min="0" max="200" value="100" />
+        <output id="shadowsVal">100</output>
       </div>
 
-      <p class="hint">En la hoja de compartir, elige «Guardar imagen». Si no aparece, se descargará directamente.</p>
+    </div>
+
+    <div class="card">
+      <div class="picker-row">
+        <label class="btn btn-primary">
+          Cámara
+          <input id="fileCamera" type="file" accept="image/*" capture="environment" />
+        </label>
+        <label class="btn btn-secondary">
+          Galería
+          <input id="fileGallery" type="file" accept="image/*" />
+        </label>
+
+        <button type="button" class="btn btn-primary" id="btnSave" disabled>Guardar</button>
+      </div>
     </div>
   </div>
 
@@ -422,13 +410,16 @@
       const controls = document.getElementById('controls');
       const contrast = document.getElementById('contrast');
       const brightness = document.getElementById('brightness');
+      const shadows = document.getElementById('shadows');
       const contrastVal = document.getElementById('contrastVal');
       const brightnessVal = document.getElementById('brightnessVal');
+      const shadowsVal = document.getElementById('shadowsVal');
       const flipHBtn = document.getElementById('flipH');
       const flipVBtn = document.getElementById('flipV');
       const toggleCropBtn = document.getElementById('toggleCrop');
       const btnReset = document.getElementById('btnReset');
       const btnSave = document.getElementById('btnSave');
+      const btnAuto = document.getElementById('btnAuto');
       const cropOverlay = document.getElementById('cropOverlay');
       const cropBox = document.getElementById('cropBox');
 
@@ -441,13 +432,14 @@
       let cropRect = null;
       let dragState = null;
       let imageTransform = { flipX: false, flipY: false };
+      let autoEnhance = false;
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
       }
 
       function setEditingLocked(lock) {
-        const controlsToLock = [flipHBtn, flipVBtn, contrast, brightness, btnReset, btnSave];
+        const controlsToLock = [btnAuto, flipHBtn, flipVBtn, contrast, brightness, shadows, btnReset, btnSave];
         controlsToLock.forEach((el) => {
           if (!el) return;
           el.disabled = lock;
@@ -457,6 +449,7 @@
       function updateSliderLabels() {
         contrastVal.textContent = contrast.value;
         brightnessVal.textContent = brightness.value;
+        shadowsVal.textContent = shadows.value;
       }
 
       function refreshBadge() {
@@ -547,10 +540,64 @@
         const pixels = imageData.data;
         const contrastFactor = Number(contrast.value) / 100;
         const brightnessOffset = (Number(brightness.value) - 100) * 1.28;
+        const shadowsShift = (Number(shadows.value) - 100) / 100;
+
+        let autoLow = 0;
+        let autoHigh = 255;
+
+        if (autoEnhance) {
+          const hist = new Uint32Array(256);
+          const total = pixels.length / 4;
+
+          for (let i = 0; i < pixels.length; i += 4) {
+            const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+            const v = clamp(Math.round(255 - gray), 0, 255);
+            hist[v]++;
+          }
+
+          const cut = total * 0.005;
+          let acc = 0;
+
+          for (let v = 0; v < 256; v++) {
+            acc += hist[v];
+            if (acc > cut) {
+              autoLow = v;
+              break;
+            }
+          }
+
+          acc = 0;
+
+          for (let v = 255; v >= 0; v--) {
+            acc += hist[v];
+            if (acc > cut) {
+              autoHigh = v;
+              break;
+            }
+          }
+
+          if (autoHigh - autoLow < 8) {
+            autoLow = 0;
+            autoHigh = 255;
+          }
+        }
+
+        const autoRange = autoHigh - autoLow;
 
         for (let i = 0; i < pixels.length; i += 4) {
           const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
-          let value = (255 - gray - 128) * contrastFactor + 128 + brightnessOffset;
+          let value = 255 - gray;
+
+          if (autoEnhance) {
+            value = (value - autoLow) * 255 / autoRange;
+          }
+
+          value = (value - 128) * contrastFactor + 128 + brightnessOffset;
+
+          if (shadowsShift !== 0) {
+            const shadowWeight = Math.max(0, 1 - value / 128);
+            value = value + shadowsShift * 70 * shadowWeight;
+          }
 
           value = clamp(value, 0, 255);
           pixels[i] = value;
@@ -574,6 +621,8 @@
           currentImage = img;
           imageLoaded = true;
           imageTransform = { flipX: false, flipY: false };
+          autoEnhance = false;
+          btnAuto.classList.remove('is-active');
           controls.classList.add('visible');
           setEditingLocked(false);
           toImageData();
@@ -770,7 +819,10 @@
         if (!currentImage || cropMode) return;
         contrast.value = 120;
         brightness.value = 100;
+        shadows.value = 100;
         imageTransform = { flipX: false, flipY: false };
+        autoEnhance = false;
+        btnAuto.classList.remove('is-active');
         updateSliderLabels();
         toImageData();
         setCropMode(false);
@@ -828,12 +880,25 @@
         if (currentImage) toImageData();
       });
 
+      shadows.addEventListener('input', function () {
+        if (cropMode) return;
+        updateSliderLabels();
+        if (currentImage) toImageData();
+      });
+
       flipHBtn.addEventListener('click', function () {
         flipImage('horizontal');
       });
 
       flipVBtn.addEventListener('click', function () {
         flipImage('vertical');
+      });
+
+      btnAuto.addEventListener('click', function () {
+        if (!currentImage || cropMode) return;
+        autoEnhance = !autoEnhance;
+        btnAuto.classList.toggle('is-active', autoEnhance);
+        toImageData();
       });
 
       toggleCropBtn.addEventListener('click', function () {
@@ -866,6 +931,7 @@
       btnSave.addEventListener('click', saveImage);
 
       setEditingLocked(false);
+      btnSave.disabled = true;
       renderEmpty();
       updateSliderLabels();
     })();
