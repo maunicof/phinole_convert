@@ -21,7 +21,12 @@
       --radius: 24px;
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
 
     html, body {
       margin: 0;
@@ -31,6 +36,8 @@
         linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
       color: var(--text);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
     }
 
     body {
@@ -55,14 +62,14 @@
     h1 {
       margin: 0 0 6px;
       letter-spacing: -0.03em;
-      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      font-size: clamp(1.52rem, 2.6vw, 2.08rem);
       line-height: 1.2;
     }
 
     .sub {
       margin: 0;
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.96rem;
       line-height: 1.45;
     }
 
@@ -104,7 +111,7 @@
       place-items: center;
       color: var(--muted);
       text-align: center;
-      font-size: 0.96rem;
+      font-size: 0.98rem;
       letter-spacing: 0.01em;
       padding: 30px 18px;
     }
@@ -116,7 +123,7 @@
       background: rgba(10, 14, 20, 0.6);
       border: 1px solid rgba(255,255,255,0.08);
       color: rgba(255,255,255,0.9);
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       padding: 4px 8px;
       border-radius: 999px;
       letter-spacing: 0.05em;
@@ -143,8 +150,9 @@
       border-radius: 12px;
       font: inherit;
       cursor: pointer;
-      transition: transform 0.08s ease, filter 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-      min-height: 46px;
+      transition: transform 0.08s ease, filter 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+      min-height: 48px;
+      font-size: 0.97rem;
     }
 
     .btn:active,
@@ -184,7 +192,7 @@
 
     .tool-btn {
       flex: 1;
-      min-width: 86px;
+      min-width: 88px;
       padding: 0 12px;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
@@ -214,7 +222,7 @@
       grid-template-columns: 82px 1fr 52px;
       gap: 10px;
       align-items: center;
-      font-size: 0.9rem;
+      font-size: 0.96rem;
     }
 
     .slider-row label {
@@ -224,7 +232,7 @@
 
     .slider-row output {
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
@@ -250,7 +258,7 @@
       color: var(--muted);
       text-align: center;
       line-height: 1.5;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
     }
 
     input[type="file"] {
@@ -282,6 +290,7 @@
       pointer-events: auto;
       touch-action: none;
       cursor: move;
+      user-select: none;
     }
 
     .crop-box::before {
@@ -314,12 +323,21 @@
     .crop-box .handle.sw { left: -7px; bottom: -7px; cursor: sw-resize; }
     .crop-box .handle.w { left: -7px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
 
+    .disabled,
+    button:disabled,
+    input:disabled,
+    label:has(input:disabled) {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     @media (max-width: 430px) {
       .app { padding-left: 10px; padding-right: 10px; }
       .picker-row { gap: 8px; }
       .toolbar { gap: 7px; }
-      .tool-btn { min-width: 72px; font-size: 0.83rem; }
-      .btn { font-size: 0.87rem; }
+      .tool-btn { min-width: 72px; font-size: 0.9rem; }
+      .btn { font-size: 0.9rem; }
       .slider-row { grid-template-columns: 72px 1fr 42px; }
     }
   </style>
@@ -430,6 +448,14 @@
         return Math.min(Math.max(value, min), max);
       }
 
+      function setEditingLocked(lock) {
+        const controlsToLock = [flipHBtn, flipVBtn, contrast, brightness, btnReset, btnSave];
+        controlsToLock.forEach((el) => {
+          if (!el) return;
+          el.disabled = lock;
+        });
+      }
+
       function updateSliderLabels() {
         contrastVal.textContent = contrast.value;
         brightnessVal.textContent = brightness.value;
@@ -471,10 +497,8 @@
           return;
         }
 
-        let w = Math.min(canvas.width * 0.72, 500);
-        let h = Math.min(canvas.height * 0.72, 500);
-        if (w > canvas.width) w = canvas.width;
-        if (h > canvas.height) h = canvas.height;
+        let w = Math.min(canvas.width * 0.7, 520);
+        let h = Math.min(canvas.height * 0.7, 520);
 
         cropRect = {
           x: (canvas.width - w) / 2,
@@ -552,6 +576,7 @@
           imageLoaded = true;
           imageTransform = { flipX: false, flipY: false };
           controls.classList.add('visible');
+          setEditingLocked(false);
           toImageData();
           URL.revokeObjectURL(url);
         };
@@ -572,7 +597,7 @@
 
       function getResizeHandle(point) {
         if (!cropRect) return null;
-        const threshold = 20;
+        const threshold = 22;
         const handles = {
           nw: { x: cropRect.x, y: cropRect.y },
           n: { x: cropRect.x + cropRect.w / 2, y: cropRect.y },
@@ -594,6 +619,7 @@
 
       function startDrag(event) {
         if (!cropMode || !cropRect) return;
+        event.preventDefault();
         const point = getPointerPosition(event);
         const resizeHandle = getResizeHandle(point);
 
@@ -609,12 +635,12 @@
             startY: point.y,
             origin: { ...cropRect }
           };
-          return;
         }
       }
 
       function moveDrag(event) {
         if (!dragState || !cropRect) return;
+        event.preventDefault();
         const point = getPointerPosition(event);
 
         if (dragState.mode === 'move') {
@@ -631,7 +657,6 @@
         }
 
         const origin = dragState.origin;
-        const minRect = MIN_SIZE;
         let x = origin.x;
         let y = origin.y;
         let w = origin.w;
@@ -639,37 +664,37 @@
 
         switch (dragState.mode) {
           case 'nw':
-            x = clamp(point.x, 0, origin.x + origin.w - minRect);
-            y = clamp(point.y, 0, origin.y + origin.h - minRect);
+            x = clamp(point.x, 0, origin.x + origin.w - MIN_SIZE);
+            y = clamp(point.y, 0, origin.y + origin.h - MIN_SIZE);
             w = origin.x + origin.w - x;
             h = origin.y + origin.h - y;
             break;
           case 'n':
-            y = clamp(point.y, 0, origin.y + origin.h - minRect);
+            y = clamp(point.y, 0, origin.y + origin.h - MIN_SIZE);
             h = origin.y + origin.h - y;
             break;
           case 'ne':
-            y = clamp(point.y, 0, origin.y + origin.h - minRect);
-            w = clamp(point.x - origin.x, minRect, canvas.width - origin.x);
+            y = clamp(point.y, 0, origin.y + origin.h - MIN_SIZE);
+            w = clamp(point.x - origin.x, MIN_SIZE, canvas.width - origin.x);
             h = origin.y + origin.h - y;
             break;
           case 'e':
-            w = clamp(point.x - origin.x, minRect, canvas.width - origin.x);
+            w = clamp(point.x - origin.x, MIN_SIZE, canvas.width - origin.x);
             break;
           case 'se':
-            w = clamp(point.x - origin.x, minRect, canvas.width - origin.x);
-            h = clamp(point.y - origin.y, minRect, canvas.height - origin.y);
+            w = clamp(point.x - origin.x, MIN_SIZE, canvas.width - origin.x);
+            h = clamp(point.y - origin.y, MIN_SIZE, canvas.height - origin.y);
             break;
           case 's':
-            h = clamp(point.y - origin.y, minRect, canvas.height - origin.y);
+            h = clamp(point.y - origin.y, MIN_SIZE, canvas.height - origin.y);
             break;
           case 'sw':
-            x = clamp(point.x, 0, origin.x + origin.w - minRect);
+            x = clamp(point.x, 0, origin.x + origin.w - MIN_SIZE);
             w = origin.x + origin.w - x;
-            h = clamp(point.y - origin.y, minRect, canvas.height - origin.y);
+            h = clamp(point.y - origin.y, MIN_SIZE, canvas.height - origin.y);
             break;
           case 'w':
-            x = clamp(point.x, 0, origin.x + origin.w - minRect);
+            x = clamp(point.x, 0, origin.x + origin.w - MIN_SIZE);
             w = origin.x + origin.w - x;
             break;
         }
@@ -680,8 +705,8 @@
         if (y + h > canvas.height) h = canvas.height - y;
         if (w < MIN_SIZE) w = MIN_SIZE;
         if (h < MIN_SIZE) h = MIN_SIZE;
-        if (x + w > canvas.width) { x = canvas.width - w; }
-        if (y + h > canvas.height) { y = canvas.height - h; }
+        if (x + w > canvas.width) x = canvas.width - w;
+        if (y + h > canvas.height) y = canvas.height - h;
 
         cropRect = { x, y, w, h };
         updateCropBox();
@@ -712,6 +737,7 @@
 
         imageLoaded = true;
         refreshBadge();
+        setCropMode(false);
         ensureCropRect();
       }
 
@@ -719,11 +745,20 @@
         cropMode = active;
         cropOverlay.classList.toggle('active', active);
         toggleCropBtn.classList.toggle('is-active', active);
-        if (active) ensureCropRect();
+        setEditingLocked(active);
+
+        if (active) {
+          ensureCropRect();
+          applyCropBtn.disabled = false;
+          toggleCropBtn.disabled = false;
+          return;
+        }
+
+        applyCropBtn.disabled = false;
       }
 
       function flipImage(direction) {
-        if (!currentImage) return;
+        if (!currentImage || cropMode) return;
 
         if (direction === 'horizontal') imageTransform.flipX = !imageTransform.flipX;
         if (direction === 'vertical') imageTransform.flipY = !imageTransform.flipY;
@@ -732,7 +767,7 @@
       }
 
       function resetEditor() {
-        if (!currentImage) return;
+        if (!currentImage || cropMode) return;
         contrast.value = 120;
         brightness.value = 100;
         imageTransform = { flipX: false, flipY: false };
@@ -742,7 +777,7 @@
       }
 
       function saveImage() {
-        if (!imageLoaded) return;
+        if (!imageLoaded || cropMode) return;
 
         canvas.toBlob(async (blob) => {
           if (!blob) return;
@@ -782,11 +817,13 @@
       });
 
       contrast.addEventListener('input', function () {
+        if (cropMode) return;
         updateSliderLabels();
         if (currentImage) toImageData();
       });
 
       brightness.addEventListener('input', function () {
+        if (cropMode) return;
         updateSliderLabels();
         if (currentImage) toImageData();
       });
@@ -812,6 +849,8 @@
       btnReset.addEventListener('click', resetEditor);
       btnSave.addEventListener('click', saveImage);
 
+      setEditingLocked(false);
+      applyCropBtn.disabled = false;
       renderEmpty();
       updateSliderLabels();
     })();
