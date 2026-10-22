@@ -1,921 +1,183 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#111318" />
-  <title>Foto Estenopeica → Positivo</title>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --bg-2: #151d27;
-      --panel: rgba(18, 24, 32, 0.9);
-      --panel-strong: #1a212c;
-      --panel-soft: rgba(255,255,255,0.04);
-      --line: rgba(255,255,255,0.08);
-      --text: #edf3fb;
-      --muted: #a9b5c1;
-      --accent: #f5bd59;
-      --accent-strong: #ffd47d;
-      --shadow: 0 18px 42px rgba(0,0,0,0.38);
-      --radius: 24px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#111318">
+<title>Foto Estenopeica → Positivo</title>
+<style>
+  :root{
+    --bg:#111318; --card:#1c2027; --accent:#f5b841; --text:#e8eaed; --muted:#9aa3af;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  .app{max-width:520px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px;}
+  header{text-align:center;padding-top:8px;}
+  h1{font-size:1.25rem;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:.85rem;margin:0;}
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-user-select: none;
-      user-select: none;
-    }
+  .card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);}
 
-    html, body {
-      margin: 0;
-      min-height: 100%;
-      background:
-        radial-gradient(circle at top, rgba(245,189,89,0.15), transparent 30%),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      -webkit-touch-callout: none;
-      touch-action: manipulation;
-    }
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;padding:14px;border:none;border-radius:12px;
+    font-size:1rem;font-weight:600;cursor:pointer;transition:transform .05s ease;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--accent);color:#16130a;}
+  .btn-secondary{background:#2b313a;color:var(--text);}
+  .btn-ghost{background:transparent;border:1px solid #3a414c;color:var(--text);}
 
-    body {
-      display: flex;
-      justify-content: center;
-      padding: 16px 0 32px;
-    }
+  input[type=file]{display:none;}
 
-    .app {
-      width: min(100%, 560px);
-      padding: 12px 14px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
+  .preview-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;
+    background:#000;min-height:160px;display:flex;align-items:center;justify-content:center;}
+  .preview-wrap canvas{width:100%;height:auto;display:block;}
+  .placeholder{color:var(--muted);font-size:.9rem;padding:32px 12px;text-align:center;}
 
-    header {
-      text-align: center;
-      padding: 6px 0 4px;
-    }
+  .controls{display:none;flex-direction:column;gap:12px;}
+  .controls.visible{display:flex;}
+  .slider-row{display:grid;grid-template-columns:88px 1fr 52px;align-items:center;gap:10px;font-size:.9rem;}
+  .slider-row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;}
+  input[type=range]{width:100%;accent-color:var(--accent);height:26px;}
 
-    h1 {
-      margin: 0 0 6px;
-      letter-spacing: -0.03em;
-      font-size: clamp(1.52rem, 2.6vw, 2.08rem);
-      line-height: 1.2;
-    }
-
-    .sub {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.96rem;
-      line-height: 1.45;
-    }
-
-    .card {
-      background: rgba(24, 30, 37, 0.9);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-      backdrop-filter: blur(10px);
-    }
-
-    .preview-wrap {
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      min-height: 280px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, #0d1118, #101b26);
-      border: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #previewCanvas {
-      display: none;
-      width: 100%;
-      height: auto;
-      max-height: 74vh;
-      object-fit: contain;
-      background: transparent;
-    }
-
-    .placeholder {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-      text-align: center;
-      font-size: 0.98rem;
-      letter-spacing: 0.01em;
-      padding: 30px 18px;
-    }
-
-    .badge {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: rgba(10, 14, 20, 0.6);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.9);
-      font-size: 0.72rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-      letter-spacing: 0.05em;
-      backdrop-filter: blur(8px);
-    }
-
-    .picker-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-      margin-bottom: 10px;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .btn,
-    .tool-btn {
-      appearance: none;
-      border: none;
-      border-radius: 12px;
-      font: inherit;
-      cursor: pointer;
-      transition: transform 0.08s ease, filter 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
-      min-height: 48px;
-      font-size: 0.97rem;
-    }
-
-    .btn:active,
-    .tool-btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      padding: 0 16px;
-      text-align: center;
-    }
-
-    .btn-primary {
-      background: linear-gradient(180deg, var(--accent-strong), var(--accent));
-      color: #1d1304;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
-    }
-
-    .btn-secondary {
-      background: linear-gradient(180deg, #2f3945, #1f2a35);
-      border: 1px solid rgba(255,255,255,0.04);
-      color: var(--text);
-    }
-
-    .btn-ghost {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text);
-    }
-
-    .tool-btn {
-      flex: 1;
-      min-width: 88px;
-      padding: 0 12px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text);
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .tool-btn.is-active {
-      background: rgba(245,189,89,0.12);
-      border-color: rgba(245,189,89,0.7);
-      color: var(--accent-strong);
-    }
-
-    .controls {
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .controls.visible {
-      display: flex;
-    }
-
-    .slider-row {
-      display: grid;
-      grid-template-columns: 82px 1fr 52px;
-      gap: 10px;
-      align-items: center;
-      font-size: 0.96rem;
-    }
-
-    .slider-row label {
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .slider-row output {
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--accent);
-      min-height: 30px;
-    }
-
-    .save-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .save-row .btn {
-      flex: 1;
-    }
-
-    .hint {
-      margin: 0;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.5;
-      font-size: 0.78rem;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .crop-overlay {
-      position: absolute;
-      inset: 0;
-      display: none;
-      z-index: 4;
-      pointer-events: none;
-    }
-
-    .crop-overlay.active {
-      display: block;
-    }
-
-    .crop-box {
-      position: absolute;
-      left: 15%;
-      top: 18%;
-      width: 70%;
-      height: 62%;
-      border-radius: 16px;
-      border: 2px solid rgba(255,255,255,0.96);
-      background: rgba(255,255,255,0.06);
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.46);
-      pointer-events: auto;
-      touch-action: none;
-      cursor: move;
-      user-select: none;
-    }
-
-    .crop-box::before {
-      content: "";
-      position: absolute;
-      inset: 12px;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      pointer-events: none;
-    }
-
-    .crop-box .handle {
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: rgba(245,189,89,0.95);
-      border: 2px solid rgba(255,255,255,1);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
-      pointer-events: auto;
-      z-index: 2;
-    }
-
-    .crop-box .handle.nw { left: -9px; top: -9px; cursor: nw-resize; }
-    .crop-box .handle.n { left: 50%; top: -9px; transform: translateX(-50%); cursor: n-resize; }
-    .crop-box .handle.ne { right: -9px; top: -9px; cursor: ne-resize; }
-    .crop-box .handle.e { right: -9px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
-    .crop-box .handle.se { right: -9px; bottom: -9px; cursor: se-resize; }
-    .crop-box .handle.s { left: 50%; bottom: -9px; transform: translateX(-50%); cursor: s-resize; }
-    .crop-box .handle.sw { left: -9px; bottom: -9px; cursor: sw-resize; }
-    .crop-box .handle.w { left: -9px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
-
-    .disabled,
-    button:disabled,
-    input:disabled,
-    label:has(input:disabled) {
-      opacity: 0.45;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    @media (max-width: 430px) {
-      .app { padding-left: 10px; padding-right: 10px; }
-      .picker-row { gap: 8px; }
-      .toolbar { gap: 7px; }
-      .tool-btn { min-width: 72px; font-size: 0.9rem; }
-      .btn { font-size: 0.9rem; }
-      .slider-row { grid-template-columns: 72px 1fr 42px; }
-    }
-  </style>
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .hint{color:var(--muted);font-size:.78rem;text-align:center;margin:0;}
+  .badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);
+    color:#fff;font-size:.7rem;padding:3px 8px;border-radius:20px;letter-spacing:.05em;}
+</style>
+<base target="_blank">
 </head>
 <body>
-  <div class="app">
-    <header>
-      <h1>📷 Foto estenopeica → Positivo</h1>
-      <p class="sub">Convierte un negativo en una imagen limpia, elegante y lista para compartir.</p>
-    </header>
+<div class="app">
+  <header>
+    <h1>📷 Estenopeica → Positivo</h1>
+    <p class="sub">Saca una foto a tu negativo o súbelo, y conviértelo a blanco y negro.</p>
+  </header>
 
-    <div class="card">
-      <div class="preview-wrap" id="previewWrap">
-        <canvas id="previewCanvas"></canvas>
-        <div class="crop-overlay" id="cropOverlay">
-          <div class="crop-box" id="cropBox">
-            <span class="handle nw"></span>
-            <span class="handle n"></span>
-            <span class="handle ne"></span>
-            <span class="handle e"></span>
-            <span class="handle se"></span>
-            <span class="handle s"></span>
-            <span class="handle sw"></span>
-            <span class="handle w"></span>
-          </div>
-        </div>
-        <div class="placeholder" id="placeholder">La vista previa aparecerá aquí</div>
-        <div class="badge" id="badge">Sin imagen</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="picker-row">
-        <label class="btn btn-primary">
-          Cámara
-          <input id="fileCamera" type="file" accept="image/*" capture="environment" />
-        </label>
-        <label class="btn btn-secondary">
-          Galería
-          <input id="fileGallery" type="file" accept="image/*" />
-        </label>
-      </div>
-
-      <div class="toolbar">
-        <button type="button" class="tool-btn" id="flipH">↔ Horizontal</button>
-        <button type="button" class="tool-btn" id="flipV">↕ Vertical</button>
-        <button type="button" class="tool-btn" id="toggleCrop">✂ Recortar</button>
-        <button type="button" class="tool-btn" id="btnReset">↺</button>
-      </div>
-    </div>
-
-    <div class="card controls" id="controls">
-      <div class="slider-row">
-        <label for="contrast">Contraste</label>
-        <input type="range" id="contrast" min="50" max="200" value="120" />
-        <output id="contrastVal">120</output>
-      </div>
-
-      <div class="slider-row">
-        <label for="brightness">Luces</label>
-        <input type="range" id="brightness" min="50" max="200" value="100" />
-        <output id="brightnessVal">100</output>
-      </div>
-
-      <div class="slider-row">
-        <label for="blackPoint">Negros</label>
-        <input type="range" id="blackPoint" min="0" max="200" value="100" />
-        <output id="blackVal">100</output>
-      </div>
-
-      <div class="slider-row">
-        <label for="whitePoint">Blancos</label>
-        <input type="range" id="whitePoint" min="0" max="200" value="100" />
-        <output id="whiteVal">100</output>
-      </div>
-
-      <div class="save-row">
-        <button type="button" class="btn btn-ghost" id="applyCrop">Aplicar recorte</button>
-        <button type="button" class="btn btn-primary" id="btnSave">Guardar</button>
-      </div>
-
-      <p class="hint">En la hoja de compartir, elige «Guardar imagen». Si no aparece, se descargará directamente.</p>
+  <div class="card">
+    <div class="preview-wrap">
+      <span class="placeholder">La vista previa aparecerá aquí</span>
     </div>
   </div>
 
-  <script>
-    (function () {
-      const fileCamera = document.getElementById('fileCamera');
-      const fileGallery = document.getElementById('fileGallery');
-      const previewWrap = document.getElementById('previewWrap');
-      const canvas = document.getElementById('previewCanvas');
-      const ctx = canvas.getContext('2d');
-      const placeholder = document.getElementById('placeholder');
-      const badge = document.getElementById('badge');
-      const controls = document.getElementById('controls');
-      const contrast = document.getElementById('contrast');
-      const brightness = document.getElementById('brightness');
-      const blackPoint = document.getElementById('blackPoint');
-      const whitePoint = document.getElementById('whitePoint');
-      const contrastVal = document.getElementById('contrastVal');
-      const brightnessVal = document.getElementById('brightnessVal');
-      const blackVal = document.getElementById('blackVal');
-      const whiteVal = document.getElementById('whiteVal');
-      const flipHBtn = document.getElementById('flipH');
-      const flipVBtn = document.getElementById('flipV');
-      const toggleCropBtn = document.getElementById('toggleCrop');
-      const btnReset = document.getElementById('btnReset');
-      const btnSave = document.getElementById('btnSave');
-      const applyCropBtn = document.getElementById('applyCrop');
-      const cropOverlay = document.getElementById('cropOverlay');
-      const cropBox = document.getElementById('cropBox');
-
-      const MAX_SIDE = 2200;
-      const MIN_SIZE = 44;
-
-      let imageLoaded = false;
-      let currentImage = null;
-      let cropMode = false;
-      let cropRect = null;
-      let dragState = null;
-      let imageTransform = { flipX: false, flipY: false };
-
-      function clamp(value, min, max) {
-        return Math.min(Math.max(value, min), max);
-      }
-
-      function setEditingLocked(lock) {
-        const controlsToLock = [flipHBtn, flipVBtn, contrast, brightness, blackPoint, whitePoint, btnReset, btnSave];
-        controlsToLock.forEach((el) => {
-          if (!el) return;
-          el.disabled = lock;
-        });
-      }
-
-      function updateSliderLabels() {
-        contrastVal.textContent = contrast.value;
-        brightnessVal.textContent = brightness.value;
-        blackVal.textContent = blackPoint.value;
-        whiteVal.textContent = whitePoint.value;
-      }
-
-      function refreshBadge() {
-        if (!imageLoaded) {
-          badge.textContent = 'Sin imagen';
-          return;
-        }
-        badge.textContent = canvas.width + '×' + canvas.height;
-      }
-
-      function renderEmpty() {
-        placeholder.style.display = 'grid';
-        canvas.style.display = 'none';
-        refreshBadge();
-      }
-
-      function updateCropBox() {
-        if (!imageLoaded || !cropRect) {
-          cropBox.style.display = 'none';
-          return;
-        }
-
-        cropBox.style.display = 'block';
-        const scaleX = previewWrap.clientWidth / canvas.width;
-        const scaleY = previewWrap.clientHeight / canvas.height;
-
-        cropBox.style.left = (cropRect.x * scaleX) + 'px';
-        cropBox.style.top = (cropRect.y * scaleY) + 'px';
-        cropBox.style.width = (cropRect.w * scaleX) + 'px';
-        cropBox.style.height = (cropRect.h * scaleY) + 'px';
-      }
-
-      function ensureCropRect() {
-        if (!imageLoaded) {
-          cropRect = null;
-          return;
-        }
-
-        let w = Math.min(canvas.width * 0.7, 520);
-        let h = Math.min(canvas.height * 0.7, 520);
-
-        cropRect = {
-          x: (canvas.width - w) / 2,
-          y: (canvas.height - h) / 2,
-          w,
-          h
-        };
-
-        if (cropRect.x < 0) cropRect.x = 0;
-        if (cropRect.y < 0) cropRect.y = 0;
-        if (cropRect.w < MIN_SIZE) cropRect.w = MIN_SIZE;
-        if (cropRect.h < MIN_SIZE) cropRect.h = MIN_SIZE;
-        if (cropRect.x + cropRect.w > canvas.width) cropRect.x = canvas.width - cropRect.w;
-        if (cropRect.y + cropRect.h > canvas.height) cropRect.y = canvas.height - cropRect.h;
-
-        updateCropBox();
-      }
-
-      function toImageData() {
-        if (!currentImage) return;
-        const img = currentImage;
-        const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
-        const w = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
-        const h = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
-
-        canvas.width = w;
-        canvas.height = h;
-        ctx.clearRect(0, 0, w, h);
-
-        const temp = document.createElement('canvas');
-        temp.width = w;
-        temp.height = h;
-        const tctx = temp.getContext('2d');
-
-        tctx.save();
-        if (imageTransform.flipX) {
-          tctx.translate(w, 0);
-          tctx.scale(-1, 1);
-        }
-        if (imageTransform.flipY) {
-          tctx.translate(0, h);
-          tctx.scale(1, -1);
-        }
-        tctx.drawImage(img, 0, 0, w, h);
-        tctx.restore();
-
-        const imageData = tctx.getImageData(0, 0, w, h);
-        const pixels = imageData.data;
-        const contrastFactor = Number(contrast.value) / 100;
-        const brightnessOffset = (Number(brightness.value) - 100) * 1.28;
-        const blackShift = Number(blackPoint.value) - 100;
-        const whiteShift = Number(whitePoint.value) - 100;
-
-        for (let i = 0; i < pixels.length; i += 4) {
-          const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
-          let value = (255 - gray - 128) * contrastFactor + 128 + brightnessOffset;
-
-          if (blackShift < 0) {
-            value = value * (1 + blackShift / 120);
-          } else if (blackShift > 0) {
-            value = value + (255 - value) * (blackShift / 220);
-          }
-
-          if (whiteShift < 0) {
-            value = value * (1 + whiteShift / 180);
-          } else if (whiteShift > 0) {
-            value = value + (255 - value) * (whiteShift / 220);
-          }
-
-          value = clamp(value, 0, 255);
-          pixels[i] = value;
-          pixels[i + 1] = value;
-          pixels[i + 2] = value;
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-        placeholder.style.display = 'none';
-        canvas.style.display = 'block';
-        refreshBadge();
-        ensureCropRect();
-      }
-
-      function loadImageFromFile(file) {
-        if (!file) return;
-
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-          currentImage = img;
-          imageLoaded = true;
-          imageTransform = { flipX: false, flipY: false };
-          controls.classList.add('visible');
-          setEditingLocked(false);
-          toImageData();
-          URL.revokeObjectURL(url);
-        };
-        img.src = url;
-      }
-
-      function getPointerPosition(event) {
-        const rect = previewWrap.getBoundingClientRect();
-        return {
-          x: clamp((event.clientX - rect.left) * (canvas.width / rect.width), 0, canvas.width),
-          y: clamp((event.clientY - rect.top) * (canvas.height / rect.height), 0, canvas.height),
-        };
-      }
-
-      function pointInsideRect(point, rect) {
-        return point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
-      }
-
-      function getResizeHandle(point) {
-        if (!cropRect) return null;
-        const threshold = 28;
-        const handles = {
-          nw: { x: cropRect.x, y: cropRect.y },
-          n: { x: cropRect.x + cropRect.w / 2, y: cropRect.y },
-          ne: { x: cropRect.x + cropRect.w, y: cropRect.y },
-          e: { x: cropRect.x + cropRect.w, y: cropRect.y + cropRect.h / 2 },
-          se: { x: cropRect.x + cropRect.w, y: cropRect.y + cropRect.h },
-          s: { x: cropRect.x + cropRect.w / 2, y: cropRect.y + cropRect.h },
-          sw: { x: cropRect.x, y: cropRect.y + cropRect.h },
-          w: { x: cropRect.x, y: cropRect.y + cropRect.h / 2 }
-        };
-
-        for (const [key, pos] of Object.entries(handles)) {
-          const dist = Math.hypot(point.x - pos.x, point.y - pos.y);
-          if (dist <= threshold) return key;
-        }
-
-        return null;
-      }
-
-      function startDrag(event, handleName = null) {
-        if (!cropMode || !cropRect) return;
-        event.preventDefault();
-        const point = getPointerPosition(event);
-
-        if (handleName) {
-          dragState = { mode: handleName, startX: point.x, startY: point.y, origin: { ...cropRect } };
-          return;
-        }
-
-        const resizeHandle = getResizeHandle(point);
-        if (resizeHandle) {
-          dragState = { mode: resizeHandle, startX: point.x, startY: point.y, origin: { ...cropRect } };
-          return;
-        }
-
-        if (pointInsideRect(point, cropRect)) {
-          dragState = {
-            mode: 'move',
-            startX: point.x,
-            startY: point.y,
-            origin: { ...cropRect }
-          };
-        }
-      }
-
-      function moveDrag(event) {
-        if (!dragState || !cropRect) return;
-        event.preventDefault();
-        const point = getPointerPosition(event);
-
-        if (dragState.mode === 'move') {
-          const dx = point.x - dragState.startX;
-          const dy = point.y - dragState.startY;
-
-          cropRect = {
-            ...dragState.origin,
-            x: clamp(dragState.origin.x + dx, 0, canvas.width - dragState.origin.w),
-            y: clamp(dragState.origin.y + dy, 0, canvas.height - dragState.origin.h)
-          };
-          updateCropBox();
-          return;
-        }
-
-        const origin = dragState.origin;
-        let x = origin.x;
-        let y = origin.y;
-        let w = origin.w;
-        let h = origin.h;
-
-        switch (dragState.mode) {
-          case 'nw':
-            x = clamp(point.x, 0, origin.x + origin.w - MIN_SIZE);
-            y = clamp(point.y, 0, origin.y + origin.h - MIN_SIZE);
-            w = origin.x + origin.w - x;
-            h = origin.y + origin.h - y;
-            break;
-          case 'n':
-            y = clamp(point.y, 0, origin.y + origin.h - MIN_SIZE);
-            h = origin.y + origin.h - y;
-            break;
-          case 'ne':
-            y = clamp(point.y, 0, origin.y + origin.h - MIN_SIZE);
-            w = clamp(point.x - origin.x, MIN_SIZE, canvas.width - origin.x);
-            h = origin.y + origin.h - y;
-            break;
-          case 'e':
-            w = clamp(point.x - origin.x, MIN_SIZE, canvas.width - origin.x);
-            break;
-          case 'se':
-            w = clamp(point.x - origin.x, MIN_SIZE, canvas.width - origin.x);
-            h = clamp(point.y - origin.y, MIN_SIZE, canvas.height - origin.y);
-            break;
-          case 's':
-            h = clamp(point.y - origin.y, MIN_SIZE, canvas.height - origin.y);
-            break;
-          case 'sw':
-            x = clamp(point.x, 0, origin.x + origin.w - MIN_SIZE);
-            w = origin.x + origin.w - x;
-            h = clamp(point.y - origin.y, MIN_SIZE, canvas.height - origin.y);
-            break;
-          case 'w':
-            x = clamp(point.x, 0, origin.x + origin.w - MIN_SIZE);
-            w = origin.x + origin.w - x;
-            break;
-        }
-
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-        if (x + w > canvas.width) w = canvas.width - x;
-        if (y + h > canvas.height) h = canvas.height - y;
-        if (w < MIN_SIZE) w = MIN_SIZE;
-        if (h < MIN_SIZE) h = MIN_SIZE;
-        if (x + w > canvas.width) x = canvas.width - w;
-        if (y + h > canvas.height) y = canvas.height - h;
-
-        cropRect = { x, y, w, h };
-        updateCropBox();
-      }
-
-      function endDrag() {
-        dragState = null;
-      }
-
-      function applyCrop() {
-        if (!currentImage || !cropRect) return;
-
-        const sx = Math.round(cropRect.x);
-        const sy = Math.round(cropRect.y);
-        const sw = Math.max(1, Math.round(cropRect.w));
-        const sh = Math.max(1, Math.round(cropRect.h));
-
-        const cropped = document.createElement('canvas');
-        cropped.width = sw;
-        cropped.height = sh;
-        const cctx = cropped.getContext('2d');
-        cctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
-
-        canvas.width = sw;
-        canvas.height = sh;
-        ctx.clearRect(0, 0, sw, sh);
-        ctx.drawImage(cropped, 0, 0);
-
-        imageLoaded = true;
-        refreshBadge();
-        setCropMode(false);
-        ensureCropRect();
-      }
-
-      function setCropMode(active) {
-        cropMode = active;
-        cropOverlay.classList.toggle('active', active);
-        toggleCropBtn.classList.toggle('is-active', active);
-        setEditingLocked(active);
-
-        if (active) {
-          ensureCropRect();
-          applyCropBtn.disabled = false;
-          return;
-        }
-
-        applyCropBtn.disabled = false;
-      }
-
-      function flipImage(direction) {
-        if (!currentImage || cropMode) return;
-
-        if (direction === 'horizontal') imageTransform.flipX = !imageTransform.flipX;
-        if (direction === 'vertical') imageTransform.flipY = !imageTransform.flipY;
-
-        toImageData();
-      }
-
-      function resetEditor() {
-        if (!currentImage || cropMode) return;
-        contrast.value = 120;
-        brightness.value = 100;
-        blackPoint.value = 100;
-        whitePoint.value = 100;
-        imageTransform = { flipX: false, flipY: false };
-        updateSliderLabels();
-        toImageData();
-        setCropMode(false);
-      }
-
-      function saveImage() {
-        if (!imageLoaded || cropMode) return;
-
-        canvas.toBlob(async (blob) => {
-          if (!blob) return;
-
-          const file = new File([blob], 'positivo.jpg', { type: 'image/jpeg' });
-
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({ files: [file], title: 'Foto estenopeica' });
-              return;
-            } catch (err) {
-              if (err && err.name === 'AbortError') return;
-            }
-          }
-
-          const a = document.createElement('a');
-          const url = URL.createObjectURL(blob);
-          a.href = url;
-          a.download = 'positivo_' + Date.now() + '.jpg';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-        }, 'image/jpeg', 0.92);
-      }
-
-      fileCamera.addEventListener('change', function (event) {
-        const file = event.target.files[0];
-        loadImageFromFile(file);
-        event.target.value = '';
-      });
-
-      fileGallery.addEventListener('change', function (event) {
-        const file = event.target.files[0];
-        loadImageFromFile(file);
-        event.target.value = '';
-      });
-
-      contrast.addEventListener('input', function () {
-        if (cropMode) return;
-        updateSliderLabels();
-        if (currentImage) toImageData();
-      });
-
-      brightness.addEventListener('input', function () {
-        if (cropMode) return;
-        updateSliderLabels();
-        if (currentImage) toImageData();
-      });
-
-      blackPoint.addEventListener('input', function () {
-        if (cropMode) return;
-        updateSliderLabels();
-        if (currentImage) toImageData();
-      });
-
-      whitePoint.addEventListener('input', function () {
-        if (cropMode) return;
-        updateSliderLabels();
-        if (currentImage) toImageData();
-      });
-
-      flipHBtn.addEventListener('click', function () {
-        flipImage('horizontal');
-      });
-
-      flipVBtn.addEventListener('click', function () {
-        flipImage('vertical');
-      });
-
-      toggleCropBtn.addEventListener('click', function () {
-        setCropMode(!cropMode);
-      });
-
-      document.querySelectorAll('.handle').forEach((handle) => {
-        handle.addEventListener('pointerdown', (event) => {
-          const name = Array.from(handle.classList).find((cls) => cls !== 'handle');
-          startDrag(event, name);
-        });
-      });
-
-      cropBox.addEventListener('pointerdown', (event) => {
-        if (event.target.closest('.handle')) return;
-        startDrag(event);
-      });
-
-      window.addEventListener('pointermove', moveDrag);
-      window.addEventListener('pointerup', endDrag);
-      window.addEventListener('pointercancel', endDrag);
-
-      applyCropBtn.addEventListener('click', applyCrop);
-      btnReset.addEventListener('click', resetEditor);
-      btnSave.addEventListener('click', saveImage);
-
-      setEditingLocked(false);
-      applyCropBtn.disabled = false;
-      renderEmpty();
-      updateSliderLabels();
-    })();
-  </script>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+    <label class="btn btn-primary">
+      📸 Usar cámara
+      <input id="fileCamera" type="file" accept="image/*" capture="environment">
+    </label>
+    <label class="btn btn-secondary">
+      🖼️ Subir de la galería
+      <input id="fileGallery" type="file" accept="image/*">
+    </label>
+  </div>
+
+  <div class="card controls" id="controls">
+    <div class="slider-row">
+      <label for="contrast">Contraste</label>
+      <input type="range" id="contrast" min="50" max="200" value="120">
+      <output id="contrastVal">120</output>
+    </div>
+    <div class="slider-row">
+      <label for="brightness">Luces</label>
+      <input type="range" id="brightness" min="50" max="200" value="100">
+      <output id="brightnessVal">100</output>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnReset">↺ Reiniciar</button>
+      <button class="btn btn-primary" id="btnDownload">⬇️ Guardar</button>
+    </div>
+    <p class="hint">Consejo: en iPhone usa «Guardar imagen» manteniendo presionada la foto descargada.</p>
+  </div>
+
+  <p class="hint">Todo se procesa en tu teléfono. Nada se sube a internet. ☁️❌</p>
+</div>
+
+<script>
+(function(){
+  const fileCamera = document.getElementById('fileCamera');
+  const fileGallery = document.getElementById('fileGallery');
+  const wrap = document.querySelector('.preview-wrap');
+  const controls = document.getElementById('controls');
+  const contrast = document.getElementById('contrast');
+  const brightness = document.getElementById('brightness');
+  const contrastVal = document.getElementById('contrastVal');
+  const brightnessVal = document.getElementById('brightnessVal');
+  const btnReset = document.getElementById('btnReset');
+  const btnDownload = document.getElementById('btnDownload');
+
+  let img = null;           // imagen original cargada
+  let canvas = null, ctx = null;
+  const MAX_SIDE = 2000;    // límite para que sea rápido en celulares
+
+  function handleFile(e){
+    const f = e.target.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    img = new Image();
+    img.onload = () => {
+      // escalar si es muy grande
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, MAX_SIDE / Math.max(w,h));
+      w = Math.round(w*scale); h = Math.round(h*scale);
+      canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      wrap.innerHTML = '';
+      wrap.appendChild(canvas);
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.id = 'badge';
+      wrap.appendChild(badge);
+      controls.classList.add('visible');
+      apply();
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    e.target.value = ''; // permite re-elegir la misma foto
+  }
+
+  // Invertir negativo -> positivo, pasar a B/N y aplicar contraste/brillo.
+  // Fórmula: out = (255 - gray - 128) * contrast/100 + 128 + (brightness-100)*1.28
+  function apply(){
+    if(!canvas) return;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const px = data.data;
+    const c = contrast.value / 100;
+    const b = (brightness.value - 100) * 1.28; // ±128 aprox
+    for(let i = 0; i < px.length; i += 4){
+      const gray = 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2];
+      let v = (255 - gray - 128) * c + 128 + b;
+      v = v < 0 ? 0 : (v > 255 ? 255 : v);
+      px[i] = px[i+1] = px[i+2] = v;
+    }
+    ctx.putImageData(data, 0, 0);
+    contrastVal.textContent = contrast.value;
+    brightnessVal.textContent = brightness.value;
+    const badge = document.getElementById('badge');
+    if(badge) badge.textContent = canvas.width + '×' + canvas.height;
+  }
+
+  function download(){
+    if(!canvas) return;
+    const a = document.createElement('a');
+    a.download = 'positivo_' + Date.now() + '.png';
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  fileCamera.addEventListener('change', handleFile);
+  fileGallery.addEventListener('change', handleFile);
+  contrast.addEventListener('input', apply);
+  brightness.addEventListener('input', apply);
+  btnReset.addEventListener('click', () => {
+    contrast.value = 120; brightness.value = 100; apply();
+  });
+  btnDownload.addEventListener('click', download);
+})();
+</script>
 </body>
 </html>
