@@ -7,67 +7,357 @@
 <title>Foto Estenopeica → Positivo</title>
 <style>
   :root{
-    --bg:#111318; --card:#1c2027; --accent:#f5b841; --text:#e8eaed; --muted:#9aa3af;
+    --bg: #0d1117;
+    --bg-2: #151b22;
+    --card: rgba(26, 32, 39, 0.96);
+    --card-strong: #1d242d;
+    --accent: #f5b841;
+    --accent-strong: #ffcb5c;
+    --text: #edf3fb;
+    --muted: #a6b0be;
+    --line: rgba(255,255,255,0.08);
+    --shadow: 0 14px 28px rgba(0,0,0,0.32);
+    --radius: 22px;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
-  .app{max-width:520px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px;}
-  header{text-align:center;padding-top:8px;}
-  h1{font-size:1.25rem;margin:0 0 4px;}
-  .sub{color:var(--muted);font-size:.85rem;margin:0;}
 
-  .card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);}
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  .btn{display:flex;align-items:center;justify-content:center;gap:8px;
-    width:100%;padding:14px;border:none;border-radius:12px;
-    font-size:1rem;font-weight:600;cursor:pointer;transition:transform .05s ease;}
-  .btn:active{transform:scale(.97);}
-  .btn-primary{background:var(--accent);color:#16130a;}
-  .btn-secondary{background:#2b313a;color:var(--text);}
-  .btn-ghost{background:transparent;border:1px solid #3a414c;color:var(--text);}
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(circle at top, rgba(245,184,65,0.10), transparent 35%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
 
-  input[type=file]{display:none;}
+  body {
+    display: flex;
+    justify-content: center;
+  }
 
-  .preview-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;
-    background:#000;min-height:160px;display:flex;align-items:center;justify-content:center;}
-  .preview-wrap canvas{width:100%;height:auto;display:block;}
-  .placeholder{color:var(--muted);font-size:.9rem;padding:32px 12px;text-align:center;}
+  .app {
+    width: min(100%, 560px);
+    padding: 18px 16px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
 
-  .controls{display:none;flex-direction:column;gap:12px;}
-  .controls.visible{display:flex;}
-  .slider-row{display:grid;grid-template-columns:88px 1fr 52px;align-items:center;gap:10px;font-size:.9rem;}
-  .slider-row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;}
-  input[type=range]{width:100%;accent-color:var(--accent);height:26px;}
+  header {
+    text-align: center;
+    padding: 6px 0 4px;
+  }
 
-  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .hint{color:var(--muted);font-size:.78rem;text-align:center;margin:0;}
-  .badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);
-    color:#fff;font-size:.7rem;padding:3px 8px;border-radius:20px;letter-spacing:.05em;}
+  h1 {
+    margin: 0 0 4px;
+    font-size: clamp(1.45rem, 3vw, 1.95rem);
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+  }
+
+  .sub {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+
+  .preview-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 260px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0a0d12, #111924);
+    border: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    background: transparent;
+  }
+
+  .placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 32px 18px;
+    letter-spacing: 0.01em;
+  }
+
+  .picker-row,
+  .tool-row,
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .picker-row {
+    margin-bottom: 10px;
+  }
+
+  .tool-row {
+    flex-wrap: wrap;
+  }
+
+  .btn,
+  .tool-btn {
+    appearance: none;
+    border: none;
+    border-radius: 12px;
+    min-height: 46px;
+    cursor: pointer;
+    transition: transform 0.08s ease, filter 0.2s ease, opacity 0.2s ease;
+    font: inherit;
+  }
+
+  .btn:active,
+  .tool-btn:active {
+    transform: scale(0.98);
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    font-weight: 700;
+    padding: 0 14px;
+    color: var(--text);
+    background: transparent;
+  }
+
+  .btn-primary {
+    background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+    color: #17130a;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(180deg, #323b47, #202934);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text);
+  }
+
+  .tool-btn {
+    flex: 1 1 0;
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-weight: 600;
+    padding: 0 14px;
+    min-width: 84px;
+  }
+
+  .tool-btn.is-active {
+    background: rgba(245,184,65,0.15);
+    border-color: rgba(245,184,65,0.6);
+    color: var(--accent-strong);
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .tool-btn,
+  .btn-ghost {
+    letter-spacing: -0.01em;
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+
+  .controls {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .controls.visible {
+    display: flex;
+  }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: 88px 1fr 52px;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .slider-row label {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .slider-row output {
+    text-align: right;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.82rem;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    min-height: 30px;
+  }
+
+  .btn-row {
+    display: flex;
+    margin-top: 2px;
+  }
+
+  .btn-row .btn {
+    flex: 1 1 0;
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    background: rgba(10, 14, 19, 0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.9);
+    font-size: 0.69rem;
+    padding: 4px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(5px);
+  }
+
+  .crop-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: none;
+    pointer-events: none;
+  }
+
+  .crop-overlay.active {
+    display: block;
+  }
+
+  .crop-box {
+    position: absolute;
+    left: 15%;
+    top: 18%;
+    width: 70%;
+    height: 62%;
+    border: 2px solid rgba(255,255,255,0.98);
+    border-radius: 16px;
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
+    pointer-events: auto;
+    touch-action: none;
+    cursor: move;
+  }
+
+  .crop-box::before,
+  .crop-box::after {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    pointer-events: none;
+  }
+
+  .crop-box::after {
+    inset: auto auto 12px 12px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.95);
+    border-radius: 999px;
+    background: rgba(245,184,65,0.85);
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.08);
+  }
+
+  @media (max-width: 420px) {
+    .app { padding-left: 12px; padding-right: 12px; }
+    .picker-row,
+    .tool-row,
+    .btn-row { gap: 8px; }
+    .slider-row { grid-template-columns: 74px 1fr 44px; }
+    .tool-btn { font-size: 0.83rem; }
+    .btn { font-size: 0.88rem; }
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>📷 Estenopeica → Positivo</h1>
-    <p class="sub">Saca una foto a tu negativo o súbelo, y conviértelo a blanco y negro.</p>
+    <h1>📷 Foto estenopeica → Positivo</h1>
+    <p class="sub">Convierte un negativo en una imagen nítida, con ajuste profesional y recorte preciso.</p>
   </header>
 
   <div class="card">
-    <div class="preview-wrap">
-      <span class="placeholder">La vista previa aparecerá aquí</span>
+    <div class="preview-wrap" id="previewWrap">
+      <canvas id="previewCanvas"></canvas>
+      <div class="crop-overlay" id="cropOverlay" aria-label="Recorte de imagen">
+        <div class="crop-box" id="cropBox"></div>
+      </div>
+      <span class="placeholder" id="placeholder">La vista previa aparecerá aquí</span>
+      <span class="badge" id="badge">Sin imagen</span>
     </div>
   </div>
 
-  <div class="card" style="display:flex;flex-direction:column;gap:10px;">
-    <label class="btn btn-primary">
-      📸 Usar cámara
-      <input id="fileCamera" type="file" accept="image/*" capture="environment">
-    </label>
-    <label class="btn btn-secondary">
-      🖼️ Subir de la galería
-      <input id="fileGallery" type="file" accept="image/*">
-    </label>
+  <div class="card">
+    <div class="picker-row">
+      <label class="btn btn-primary">
+        Cámara
+        <input id="fileCamera" type="file" accept="image/*" capture="environment">
+      </label>
+      <label class="btn btn-secondary">
+        Galería
+        <input id="fileGallery" type="file" accept="image/*">
+      </label>
+    </div>
+
+    <div class="tool-row">
+      <button class="tool-btn" id="flipH" type="button">↔ Horizontal</button>
+      <button class="tool-btn" id="flipV" type="button">↕ Vertical</button>
+      <button class="tool-btn" id="toggleCrop" type="button">✂ Recortar</button>
+      <button class="tool-btn" id="btnReset" type="button">↺</button>
+    </div>
   </div>
 
   <div class="card controls" id="controls">
@@ -76,117 +366,406 @@
       <input type="range" id="contrast" min="50" max="200" value="120">
       <output id="contrastVal">120</output>
     </div>
+
     <div class="slider-row">
       <label for="brightness">Luces</label>
       <input type="range" id="brightness" min="50" max="200" value="100">
       <output id="brightnessVal">100</output>
     </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="btnReset">↺ Reiniciar</button>
-      <button class="btn btn-primary" id="btnSave">💾 Guardar en galería</button>
-    </div>
-    <p class="hint">En la hoja de compartir, elige «Guardar imagen». Si no aparece, se descargará como archivo.</p>
-  </div>
 
-  <p class="hint">Todo se procesa en tu teléfono. Nada se sube a internet. ☁️❌</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="applyCrop" type="button">Aplicar recorte</button>
+      <button class="btn btn-primary" id="btnSave" type="button">Guardar</button>
+    </div>
+
+    <p class="hint">En la hoja de compartir, elige «Guardar imagen»; si no aparece, se descargará como archivo.</p>
+  </div>
 </div>
 
 <script>
-(function(){
+(function () {
   const fileCamera = document.getElementById('fileCamera');
   const fileGallery = document.getElementById('fileGallery');
-  const wrap = document.querySelector('.preview-wrap');
+  const previewWrap = document.getElementById('previewWrap');
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  const placeholder = document.getElementById('placeholder');
+  const badge = document.getElementById('badge');
   const controls = document.getElementById('controls');
+
   const contrast = document.getElementById('contrast');
   const brightness = document.getElementById('brightness');
   const contrastVal = document.getElementById('contrastVal');
   const brightnessVal = document.getElementById('brightnessVal');
+
+  const flipHBtn = document.getElementById('flipH');
+  const flipVBtn = document.getElementById('flipV');
+  const toggleCropBtn = document.getElementById('toggleCrop');
   const btnReset = document.getElementById('btnReset');
   const btnSave = document.getElementById('btnSave');
+  const applyCropBtn = document.getElementById('applyCrop');
 
-  let img = null;
-  let canvas = null, ctx = null;
-  const MAX_SIDE = 2000;
+  const cropOverlay = document.getElementById('cropOverlay');
+  const cropBox = document.getElementById('cropBox');
 
-  function handleFile(e){
-    const f = e.target.files[0];
-    if(!f) return;
-    const url = URL.createObjectURL(f);
-    img = new Image();
-    img.onload = () => {
-      let w = img.naturalWidth, h = img.naturalHeight;
-      const scale = Math.min(1, MAX_SIDE / Math.max(w,h));
-      w = Math.round(w*scale); h = Math.round(h*scale);
-      canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      wrap.innerHTML = '';
-      wrap.appendChild(canvas);
-      const badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.id = 'badge';
-      wrap.appendChild(badge);
-      controls.classList.add('visible');
-      apply();
+  const MAX_SIDE = 2200;
+
+  let currentImage = null;
+  let cropMode = false;
+  let cropRect = null;
+  let dragState = null;
+
+  function setCanvasSize(w, h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+
+  function updateBadge() {
+    if (!currentImage) {
+      badge.textContent = 'Sin imagen';
+      return;
+    }
+    badge.textContent = canvas.width + '×' + canvas.height;
+  }
+
+  function renderCanvas() {
+    if (!currentImage) {
+      placeholder.style.display = 'grid';
+      canvas.style.display = 'none';
+      return;
+    }
+
+    placeholder.style.display = 'none';
+    canvas.style.display = 'block';
+    updateBadge();
+    updateCropBox();
+  }
+
+  function setImageSource(image) {
+    currentImage = image;
+    const scale = Math.min(1, MAX_SIDE / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const w = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+    const h = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+
+    setCanvasSize(w, h);
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(image, 0, 0, w, h);
+
+    controls.classList.add('visible');
+    renderCanvas();
+    ensureCropRect();
+    syncSliderValues();
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function () {
+      setImageSource(img);
       URL.revokeObjectURL(url);
     };
     img.src = url;
-    e.target.value = '';
+    fileCamera.value = '';
+    fileGallery.value = '';
   }
 
-  function apply(){
-    if(!canvas) return;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const px = data.data;
-    const c = contrast.value / 100;
-    const b = (brightness.value - 100) * 1.28;
-    for(let i = 0; i < px.length; i += 4){
-      const gray = 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2];
-      let v = (255 - gray - 128) * c + 128 + b;
-      v = v < 0 ? 0 : (v > 255 ? 255 : v);
-      px[i] = px[i+1] = px[i+2] = v;
-    }
-    ctx.putImageData(data, 0, 0);
+  function syncSliderValues() {
     contrastVal.textContent = contrast.value;
     brightnessVal.textContent = brightness.value;
-    const badge = document.getElementById('badge');
-    if(badge) badge.textContent = canvas.width + '×' + canvas.height;
   }
 
-  function save(){
-    if(!canvas) return;
-    canvas.toBlob(async (blob) => {
-      if(!blob) return;
-      const file = new File([blob], 'positivo.jpg', {type:'image/jpeg'});
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{
-          await navigator.share({files:[file], title:'Foto estenopeica'});
+  function applyNegativeToPositive() {
+    if (!currentImage) return;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    const contrastFactor = Number(contrast.value) / 100;
+    const brightnessOffset = (Number(brightness.value) - 100) * 1.28;
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+      let value = (255 - gray - 128) * contrastFactor + 128 + brightnessOffset;
+      value = Math.min(255, Math.max(0, value));
+      pixels[i] = value;
+      pixels[i + 1] = value;
+      pixels[i + 2] = value;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    renderCanvas();
+  }
+
+  function applyFilter() {
+    if (!currentImage) return;
+    applyNegativeToPositive();
+    syncSliderValues();
+  }
+
+  function flipCanvas(direction) {
+    if (!currentImage) return;
+
+    const temp = document.createElement('canvas');
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+    const tctx = temp.getContext('2d');
+
+    if (direction === 'horizontal') {
+      tctx.translate(canvas.width, 0);
+      tctx.scale(-1, 1);
+    } else {
+      tctx.translate(0, canvas.height);
+      tctx.scale(1, -1);
+    }
+
+    tctx.drawImage(canvas, 0, 0);
+
+    const replacement = document.createElement('canvas');
+    replacement.width = temp.width;
+    replacement.height = temp.height;
+    replacement.getContext('2d').drawImage(temp, 0, 0);
+
+    canvas.width = replacement.width;
+    canvas.height = replacement.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(replacement, 0, 0);
+    renderCanvas();
+    ensureCropRect();
+  }
+
+  function ensureCropRect() {
+    if (!currentImage) {
+      cropRect = null;
+      return;
+    }
+
+    const rect = {
+      x: canvas.width * 0.15,
+      y: canvas.height * 0.18,
+      w: canvas.width * 0.7,
+      h: canvas.height * 0.64,
+    };
+
+    cropRect = {
+      x: Math.min(Math.max(rect.x, 0), canvas.width),
+      y: Math.min(Math.max(rect.y, 0), canvas.height),
+      w: Math.min(Math.max(rect.w, 32), canvas.width * 0.95),
+      h: Math.min(Math.max(rect.h, 32), canvas.height * 0.95),
+    };
+
+    if (cropRect.x + cropRect.w > canvas.width) cropRect.x = canvas.width - cropRect.w;
+    if (cropRect.y + cropRect.h > canvas.height) cropRect.y = canvas.height - cropRect.h;
+    updateCropBox();
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function getPointerPosition(event) {
+    const rect = previewWrap.getBoundingClientRect();
+    return {
+      x: clamp((event.clientX - rect.left) * (canvas.width / rect.width), 0, canvas.width),
+      y: clamp((event.clientY - rect.top) * (canvas.height / rect.height), 0, canvas.height),
+    };
+  }
+
+  function updateCropBox() {
+    if (!cropRect || !currentImage) {
+      cropBox.style.display = 'none';
+      return;
+    }
+
+    cropBox.style.display = 'block';
+    const scaleX = previewWrap.clientWidth / canvas.width;
+    const scaleY = previewWrap.clientHeight / canvas.height;
+
+    cropBox.style.left = (cropRect.x * scaleX) + 'px';
+    cropBox.style.top = (cropRect.y * scaleY) + 'px';
+    cropBox.style.width = (cropRect.w * scaleX) + 'px';
+    cropBox.style.height = (cropRect.h * scaleY) + 'px';
+  }
+
+  function setCropMode(active) {
+    cropMode = active;
+    cropOverlay.classList.toggle('active', active);
+    toggleCropBtn.classList.toggle('is-active', active);
+    if (!active) return;
+    ensureCropRect();
+  }
+
+  function startDragFromSelection(event) {
+    if (!cropRect || !cropMode) return;
+    const cursor = getPointerPosition(event);
+    const insideX = cursor.x >= cropRect.x && cursor.x <= cropRect.x + cropRect.w;
+    const insideY = cursor.y >= cropRect.y && cursor.y <= cropRect.y + cropRect.h;
+
+    if (insideX && insideY) {
+      dragState = {
+        mode: 'move',
+        offsetX: cursor.x - cropRect.x,
+        offsetY: cursor.y - cropRect.y,
+      };
+    } else {
+      dragState = {
+        mode: 'draw',
+        startX: cursor.x,
+        startY: cursor.y,
+      };
+    }
+  }
+
+  function handlePointerMove(event) {
+    if (!dragState || !cropRect) return;
+    const point = getPointerPosition(event);
+
+    if (dragState.mode === 'draw') {
+      const x = Math.min(dragState.startX, point.x);
+      const y = Math.min(dragState.startY, point.y);
+      const w = Math.abs(point.x - dragState.startX);
+      const h = Math.abs(point.y - dragState.startY);
+
+      cropRect = {
+        x: clamp(x, 0, canvas.width),
+        y: clamp(y, 0, canvas.height),
+        w: clamp(w, 20, canvas.width),
+        h: clamp(h, 20, canvas.height),
+      };
+
+      if (cropRect.x + cropRect.w > canvas.width) cropRect.w = canvas.width - cropRect.x;
+      if (cropRect.y + cropRect.h > canvas.height) cropRect.h = canvas.height - cropRect.y;
+      updateCropBox();
+      return;
+    }
+
+    if (dragState.mode === 'move') {
+      const nextX = point.x - dragState.offsetX;
+      const nextY = point.y - dragState.offsetY;
+
+      cropRect.x = clamp(nextX, 0, canvas.width - cropRect.w);
+      cropRect.y = clamp(nextY, 0, canvas.height - cropRect.h);
+      updateCropBox();
+    }
+  }
+
+  function finishDrag() {
+    dragState = null;
+  }
+
+  function applyCrop() {
+    if (!cropRect || !currentImage) return;
+
+    const sx = Math.round(cropRect.x);
+    const sy = Math.round(cropRect.y);
+    const sw = Math.max(1, Math.round(cropRect.w));
+    const sh = Math.max(1, Math.round(cropRect.h));
+
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = sw;
+    croppedCanvas.height = sh;
+    const cctx = croppedCanvas.getContext('2d');
+
+    const imageData = ctx.getImageData(sx, sy, sw, sh);
+    cctx.putImageData(imageData, 0, 0);
+
+    canvas.width = sw;
+    canvas.height = sh;
+    ctx.clearRect(0, 0, sw, sh);
+    ctx.drawImage(croppedCanvas, 0, 0);
+
+    currentImage = null;
+    renderCanvas();
+    ensureCropRect();
+    currentImage = { naturalWidth: sw, naturalHeight: sh };
+    updateBadge();
+  }
+
+  function resetEditor() {
+    if (!currentImage) return;
+    contrast.value = 120;
+    brightness.value = 100;
+    syncSliderValues();
+    applyFilter();
+    setCropMode(false);
+    ensureCropRect();
+  }
+
+  function saveImage() {
+    if (!currentImage) return;
+
+    canvas.toBlob(async function (blob) {
+      if (!blob) return;
+
+      const file = new File([blob], 'positivo.jpg', { type: 'image/jpeg' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Foto estenopeica' });
           return;
-        }catch(err){
-          if(err && err.name === 'AbortError') return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
         }
       }
-      const a = document.createElement('a');
+
+      const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      a.download = 'positivo_' + Date.now() + '.jpg';
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      link.href = url;
+      link.download = 'positivo_' + Date.now() + '.jpg';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     }, 'image/jpeg', 0.92);
   }
 
-  fileCamera.addEventListener('change', handleFile);
-  fileGallery.addEventListener('change', handleFile);
-  contrast.addEventListener('input', apply);
-  brightness.addEventListener('input', apply);
-  btnReset.addEventListener('click', () => {
-    contrast.value = 120; brightness.value = 100; apply();
+  fileCamera.addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    handleFile(file);
   });
-  btnSave.addEventListener('click', save);
+
+  fileGallery.addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    handleFile(file);
+  });
+
+  contrast.addEventListener('input', function () {
+    syncSliderValues();
+    if (currentImage) applyFilter();
+  });
+
+  brightness.addEventListener('input', function () {
+    syncSliderValues();
+    if (currentImage) applyFilter();
+  });
+
+  flipHBtn.addEventListener('click', function () {
+    flipCanvas('horizontal');
+  });
+
+  flipVBtn.addEventListener('click', function () {
+    flipCanvas('vertical');
+  });
+
+  toggleCropBtn.addEventListener('click', function () {
+    setCropMode(!cropMode);
+  });
+
+  cropBox.addEventListener('pointerdown', startDragFromSelection);
+  cropOverlay.addEventListener('pointerdown', function (event) {
+    if (!cropMode || event.target !== cropOverlay) return;
+    startDragFromSelection(event);
+  });
+
+  window.addEventListener('pointermove', handlePointerMove);
+  window.addEventListener('pointerup', finishDrag);
+  window.addEventListener('pointercancel', finishDrag);
+
+  applyCropBtn.addEventListener('click', applyCrop);
+  btnReset.addEventListener('click', resetEditor);
+  btnSave.addEventListener('click', saveImage);
+
+  renderCanvas();
+  syncSliderValues();
 })();
 </script>
 </body>
