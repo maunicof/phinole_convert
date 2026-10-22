@@ -132,17 +132,9 @@
 
     .picker-row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       margin-bottom: 10px;
-    }
-
-    .picker-row .btn {
-      flex: 1;
-      width: auto;
-      padding: 0 6px;
-      font-size: 0.9rem;
-      white-space: nowrap;
     }
 
     .toolbar {
@@ -251,6 +243,15 @@
       min-height: 30px;
     }
 
+    .save-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .save-row .btn {
+      flex: 1;
+    }
 
     .hint {
       margin: 0;
@@ -333,15 +334,13 @@
 
     @media (max-width: 430px) {
       .app { padding-left: 10px; padding-right: 10px; }
-      .picker-row { gap: 6px; }
-      .picker-row .btn { font-size: 0.82rem; min-height: 44px; }
+      .picker-row { gap: 8px; }
       .toolbar { gap: 7px; }
       .tool-btn { min-width: 72px; font-size: 0.9rem; }
       .btn { font-size: 0.9rem; }
       .slider-row { grid-template-columns: 72px 1fr 42px; }
     }
   </style>
-<base target="_blank">
 </head>
 <body>
   <div class="app">
@@ -380,7 +379,6 @@
           Galería
           <input id="fileGallery" type="file" accept="image/*" />
         </label>
-        <button type="button" class="btn btn-primary" id="btnSave">💾 Guardar</button>
       </div>
 
       <div class="toolbar">
@@ -399,11 +397,14 @@
       </div>
 
       <div class="slider-row">
-        <label for="brightness">Luces</label>
+        <label for="brightness">Brillo</label>
         <input type="range" id="brightness" min="50" max="200" value="100" />
         <output id="brightnessVal">100</output>
       </div>
 
+      <div class="save-row">
+        <button type="button" class="btn btn-primary" id="btnSave">Guardar</button>
+      </div>
 
       <p class="hint">En la hoja de compartir, elige «Guardar imagen». Si no aparece, se descargará directamente.</p>
     </div>
@@ -550,6 +551,7 @@
         for (let i = 0; i < pixels.length; i += 4) {
           const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
           let value = (255 - gray - 128) * contrastFactor + 128 + brightnessOffset;
+
           value = clamp(value, 0, 255);
           pixels[i] = value;
           pixels[i + 1] = value;
@@ -565,8 +567,6 @@
 
       function loadImageFromFile(file) {
         if (!file) return;
-
-        if (cropMode) setCropMode(false);
 
         const url = URL.createObjectURL(file);
         const img = new Image();
@@ -749,9 +749,8 @@
         cropMode = active;
         cropOverlay.classList.toggle('active', active);
         toggleCropBtn.classList.toggle('is-active', active);
-        setEditingLocked(active);
-
         toggleCropBtn.textContent = active ? '✓ Aplicar' : '✂ Recortar';
+        setEditingLocked(active);
 
         if (active) {
           ensureCropRect();
@@ -838,6 +837,8 @@
       });
 
       toggleCropBtn.addEventListener('click', function () {
+        if (!imageLoaded) return;
+
         if (cropMode) {
           applyCrop();
         } else {
@@ -860,9 +861,6 @@
       window.addEventListener('pointermove', moveDrag);
       window.addEventListener('pointerup', endDrag);
       window.addEventListener('pointercancel', endDrag);
-      window.addEventListener('resize', function () {
-        if (cropMode) updateCropBox();
-      });
 
       btnReset.addEventListener('click', resetEditor);
       btnSave.addEventListener('click', saveImage);
