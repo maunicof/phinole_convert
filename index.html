@@ -293,19 +293,26 @@
       pointer-events: none;
     }
 
-    .crop-box::after {
-      content: "";
+    .crop-box .handle {
       position: absolute;
-      right: 14px;
-      bottom: 14px;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
-      background: rgba(245,189,89,0.9);
-      border: 2px solid rgba(255,255,255,0.95);
+      background: rgba(245,189,89,0.95);
+      border: 2px solid rgba(255,255,255,1);
       box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
-      pointer-events: none;
+      pointer-events: auto;
+      z-index: 2;
     }
+
+    .crop-box .handle.nw { left: -7px; top: -7px; cursor: nw-resize; }
+    .crop-box .handle.n { left: 50%; top: -7px; transform: translateX(-50%); cursor: n-resize; }
+    .crop-box .handle.ne { right: -7px; top: -7px; cursor: ne-resize; }
+    .crop-box .handle.e { right: -7px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+    .crop-box .handle.se { right: -7px; bottom: -7px; cursor: se-resize; }
+    .crop-box .handle.s { left: 50%; bottom: -7px; transform: translateX(-50%); cursor: s-resize; }
+    .crop-box .handle.sw { left: -7px; bottom: -7px; cursor: sw-resize; }
+    .crop-box .handle.w { left: -7px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
 
     @media (max-width: 430px) {
       .app { padding-left: 10px; padding-right: 10px; }
@@ -328,7 +335,16 @@
       <div class="preview-wrap" id="previewWrap">
         <canvas id="previewCanvas"></canvas>
         <div class="crop-overlay" id="cropOverlay">
-          <div class="crop-box" id="cropBox"></div>
+          <div class="crop-box" id="cropBox">
+            <span class="handle nw"></span>
+            <span class="handle n"></span>
+            <span class="handle ne"></span>
+            <span class="handle e"></span>
+            <span class="handle se"></span>
+            <span class="handle s"></span>
+            <span class="handle sw"></span>
+            <span class="handle w"></span>
+          </div>
         </div>
         <div class="placeholder" id="placeholder">La vista previa aparecerá aquí</div>
         <div class="badge" id="badge">Sin imagen</div>
@@ -401,7 +417,7 @@
       const cropBox = document.getElementById('cropBox');
 
       const MAX_SIDE = 2200;
-      const CROP_RATIO = 4 / 5;
+      const MIN_SIZE = 44;
 
       let imageLoaded = false;
       let currentImage = null;
@@ -455,13 +471,10 @@
           return;
         }
 
-        let w = canvas.width * 0.68;
-        let h = w / CROP_RATIO;
-
-        if (h > canvas.height * 0.72) {
-          h = canvas.height * 0.72;
-          w = h * CROP_RATIO;
-        }
+        let w = Math.min(canvas.width * 0.72, 500);
+        let h = Math.min(canvas.height * 0.72, 500);
+        if (w > canvas.width) w = canvas.width;
+        if (h > canvas.height) h = canvas.height;
 
         cropRect = {
           x: (canvas.width - w) / 2,
@@ -469,6 +482,13 @@
           w,
           h
         };
+
+        if (cropRect.x < 0) cropRect.x = 0;
+        if (cropRect.y < 0) cropRect.y = 0;
+        if (cropRect.w < MIN_SIZE) cropRect.w = MIN_SIZE;
+        if (cropRect.h < MIN_SIZE) cropRect.h = MIN_SIZE;
+        if (cropRect.x + cropRect.w > canvas.width) cropRect.x = canvas.width - cropRect.w;
+        if (cropRect.y + cropRect.h > canvas.height) cropRect.y = canvas.height - cropRect.h;
 
         updateCropBox();
       }
@@ -546,32 +566,50 @@
         };
       }
 
-      function isNearResizeHandle(point) {
-        if (!cropRect) return false;
-        const handle = 28;
-        const right = cropRect.x + cropRect.w;
-        const bottom = cropRect.y + cropRect.h;
-        return point.x >= right - handle && point.x <= right + handle && point.y >= bottom - handle && point.y <= bottom + handle;
+      function pointInsideRect(point, rect) {
+        return point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+      }
+
+      function getResizeHandle(point) {
+        if (!cropRect) return null;
+        const threshold = 20;
+        const handles = {
+          nw: { x: cropRect.x, y: cropRect.y },
+          n: { x: cropRect.x + cropRect.w / 2, y: cropRect.y },
+          ne: { x: cropRect.x + cropRect.w, y: cropRect.y },
+          e: { x: cropRect.x + cropRect.w, y: cropRect.y + cropRect.h / 2 },
+          se: { x: cropRect.x + cropRect.w, y: cropRect.y + cropRect.h },
+          s: { x: cropRect.x + cropRect.w / 2, y: cropRect.y + cropRect.h },
+          sw: { x: cropRect.x, y: cropRect.y + cropRect.h },
+          w: { x: cropRect.x, y: cropRect.y + cropRect.h / 2 }
+        };
+
+        for (const [key, pos] of Object.entries(handles)) {
+          const dist = Math.hypot(point.x - pos.x, point.y - pos.y);
+          if (dist <= threshold) return key;
+        }
+
+        return null;
       }
 
       function startDrag(event) {
         if (!cropMode || !cropRect) return;
         const point = getPointerPosition(event);
-        const mode = isNearResizeHandle(point) ? 'resize' : 'move';
-        if (mode === 'move') {
+        const resizeHandle = getResizeHandle(point);
+
+        if (resizeHandle) {
+          dragState = { mode: resizeHandle, startX: point.x, startY: point.y, origin: { ...cropRect } };
+          return;
+        }
+
+        if (pointInsideRect(point, cropRect)) {
           dragState = {
             mode: 'move',
-            offsetX: point.x - cropRect.x,
-            offsetY: point.y - cropRect.y
-          };
-        } else {
-          dragState = {
-            mode: 'resize',
             startX: point.x,
             startY: point.y,
-            startW: cropRect.w,
-            startH: cropRect.h
+            origin: { ...cropRect }
           };
+          return;
         }
       }
 
@@ -580,45 +618,72 @@
         const point = getPointerPosition(event);
 
         if (dragState.mode === 'move') {
-          const nextX = clamp(point.x - dragState.offsetX, 0, canvas.width - cropRect.w);
-          const nextY = clamp(point.y - dragState.offsetY, 0, canvas.height - cropRect.h);
-          cropRect.x = nextX;
-          cropRect.y = nextY;
+          const dx = point.x - dragState.startX;
+          const dy = point.y - dragState.startY;
+
+          cropRect = {
+            ...dragState.origin,
+            x: clamp(dragState.origin.x + dx, 0, canvas.width - dragState.origin.w),
+            y: clamp(dragState.origin.y + dy, 0, canvas.height - dragState.origin.h)
+          };
           updateCropBox();
           return;
         }
 
-        const dx = point.x - dragState.startX;
-        const dy = point.y - dragState.startY;
-        let newW = dragState.startW + dx;
-        let newH = newW / CROP_RATIO;
+        const origin = dragState.origin;
+        const minRect = MIN_SIZE;
+        let x = origin.x;
+        let y = origin.y;
+        let w = origin.w;
+        let h = origin.h;
 
-        if (Math.abs(dy) > Math.abs(dx)) {
-          newH = dragState.startH + dy;
-          newW = newH * CROP_RATIO;
+        switch (dragState.mode) {
+          case 'nw':
+            x = clamp(point.x, 0, origin.x + origin.w - minRect);
+            y = clamp(point.y, 0, origin.y + origin.h - minRect);
+            w = origin.x + origin.w - x;
+            h = origin.y + origin.h - y;
+            break;
+          case 'n':
+            y = clamp(point.y, 0, origin.y + origin.h - minRect);
+            h = origin.y + origin.h - y;
+            break;
+          case 'ne':
+            y = clamp(point.y, 0, origin.y + origin.h - minRect);
+            w = clamp(point.x - origin.x, minRect, canvas.width - origin.x);
+            h = origin.y + origin.h - y;
+            break;
+          case 'e':
+            w = clamp(point.x - origin.x, minRect, canvas.width - origin.x);
+            break;
+          case 'se':
+            w = clamp(point.x - origin.x, minRect, canvas.width - origin.x);
+            h = clamp(point.y - origin.y, minRect, canvas.height - origin.y);
+            break;
+          case 's':
+            h = clamp(point.y - origin.y, minRect, canvas.height - origin.y);
+            break;
+          case 'sw':
+            x = clamp(point.x, 0, origin.x + origin.w - minRect);
+            w = origin.x + origin.w - x;
+            h = clamp(point.y - origin.y, minRect, canvas.height - origin.y);
+            break;
+          case 'w':
+            x = clamp(point.x, 0, origin.x + origin.w - minRect);
+            w = origin.x + origin.w - x;
+            break;
         }
 
-        const minW = 80;
-        const minH = 80;
-        const maxW = Math.min(canvas.width - cropRect.x, canvas.width);
-        const maxH = Math.min(canvas.height - cropRect.y, canvas.height);
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x + w > canvas.width) w = canvas.width - x;
+        if (y + h > canvas.height) h = canvas.height - y;
+        if (w < MIN_SIZE) w = MIN_SIZE;
+        if (h < MIN_SIZE) h = MIN_SIZE;
+        if (x + w > canvas.width) { x = canvas.width - w; }
+        if (y + h > canvas.height) { y = canvas.height - h; }
 
-        newW = clamp(newW, minW, maxW);
-        newH = clamp(newW / CROP_RATIO, minH, maxH);
-        newW = newH * CROP_RATIO;
-
-        if (cropRect.x + newW > canvas.width) {
-          newW = canvas.width - cropRect.x;
-          newH = newW / CROP_RATIO;
-        }
-
-        if (cropRect.y + newH > canvas.height) {
-          newH = canvas.height - cropRect.y;
-          newW = newH * CROP_RATIO;
-        }
-
-        cropRect.w = newW;
-        cropRect.h = newH;
+        cropRect = { x, y, w, h };
         updateCropBox();
       }
 
@@ -739,20 +804,6 @@
       });
 
       cropBox.addEventListener('pointerdown', startDrag);
-      cropOverlay.addEventListener('pointerdown', function (event) {
-        if (!cropMode) return;
-        if (event.target === cropOverlay) {
-          const point = getPointerPosition(event);
-          cropRect = {
-            x: clamp(point.x - 80, 0, canvas.width - 80),
-            y: clamp(point.y - 100, 0, canvas.height - 100),
-            w: Math.min(220, canvas.width * 0.7),
-            h: Math.min(220, canvas.width * 0.7) / CROP_RATIO
-          };
-          updateCropBox();
-        }
-      });
-
       window.addEventListener('pointermove', moveDrag);
       window.addEventListener('pointerup', endDrag);
       window.addEventListener('pointercancel', endDrag);
