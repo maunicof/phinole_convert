@@ -1,4 +1,4 @@
-# 📷 Pinhole Positivo
+# 📷 Pinhole
 
 **Convierte un negativo en un positivo. Directo en el navegador.**
 
